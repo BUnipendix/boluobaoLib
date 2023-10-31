@@ -85,7 +85,7 @@ func (sfacg *HttpsClient) Post(path string, params any, model any) (*req.Respons
 	if rv := reflect.ValueOf(params); rv.Kind() == reflect.Map {
 		newDefault.SetFormData(params.(map[string]string))
 	} else if rv.Kind() == reflect.Struct {
-		newDefault.SetBody(params)
+		newDefault.SetBody(&params)
 	}
 	response, err := newDefault.Post(path)
 	if err != nil {

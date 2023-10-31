@@ -69,7 +69,7 @@ func (sfacg *API) GetChapterContent(chapterId any) (*boluobaomodel.ContentData, 
 
 func (sfacg *API) GetNewVipContent(bookId any, chapterId int) (bool, error) {
 	var m boluobaomodel.Status
-	_, err := sfacg.HttpClient.Post(fmt.Sprintf("novels/%v/orderedchaps", bookId), &BuyVipContentBody{
+	_, err := sfacg.HttpClient.Post(fmt.Sprintf("novels/%v/orderedchaps", bookId), BuyVipContentBody{
 		OrderType: "readOrder",
 		OrderAll:  false,
 		AutoOrder: true,
@@ -202,7 +202,7 @@ func (sfacg *API) GetUserWorks(accountId string) ([]boluobaomodel.BookInfoData, 
 
 func (sfacg *API) Login(username string, password string) (string, error) {
 	var m boluobaomodel.Status
-	response, err := sfacg.HttpClient.Post("sessions", &LoginBody{Username: username, Password: password}, &m)
+	response, err := sfacg.HttpClient.Post("sessions", LoginBody{Username: username, Password: password}, &m)
 	if err != nil {
 		return "", fmt.Errorf("request failed: %v", err)
 	}
