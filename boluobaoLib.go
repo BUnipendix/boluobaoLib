@@ -110,3 +110,14 @@ func WithAndroidApiKey(androidApiKey string) Options {
 		client.API.HttpClient.AndroidApiKey = androidApiKey
 	})
 }
+func WithSFCommunity(SFCommunity string) Options {
+	return OptionFunc(func(client *Client) {
+		client.API.HttpClient.Cookie = client.API.HttpClient.Cookie + ".SFCommunity=" + SFCommunity + ";"
+	})
+}
+
+func WithSessionAPP(SessionAPP string) Options {
+	return OptionFunc(func(client *Client) {
+		client.API.HttpClient.Cookie = client.API.HttpClient.Cookie + "session_APP=" + SessionAPP + ";"
+	})
+}
