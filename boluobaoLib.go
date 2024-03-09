@@ -1,13 +1,11 @@
 package boluobaoLib
 
-import "C"
 import (
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 	"github.com/AlexiaVeronica/boluobaoLib/boluobaoapi"
-	"github.com/google/uuid"
 	"github.com/imroc/req/v3"
 	"net/url"
 	"strconv"
@@ -45,11 +43,10 @@ func generateDeviceId() string {
 
 func NewClient(options ...Options) *Client {
 	c := &Client{
-		HttpClient:    req.C().SetTimeout(30 * time.Second),
+		HttpClient:    req.NewClient().SetTimeout(30 * time.Second),
 		DeviceId:      generateDeviceId(),
 		baseURL:       "https://api.sfacg.com",
 		AndroidApiKey: "FMLxgOdsfxmN!Dt4",
-		//Authorization: "Basic YW5kcm9pZHVzZXI6MWEjJDUxLXl0Njk7KkFjdkBxeHE=",
 	}
 
 	c.UserAgent = "boluobao/4.8.42(android;25)/XIAOMI/" + c.DeviceId + "/OPPO"
@@ -84,7 +81,7 @@ func (client *Client) API() *boluobaoapi.API {
 
 func (client *Client) security() string {
 	t := strconv.FormatInt(time.Now().UnixNano()/1000000, 10)
-	uuId, newMd5 := strings.ToUpper(uuid.New().String()), md5.New()
+	uuId, newMd5 := strings.ToUpper(generateDeviceId()), md5.New()
 	newMd5.Write([]byte(uuId + t + strings.ToUpper(client.DeviceId) + client.AndroidApiKey))
 	return url.Values{
 		"nonce":       {uuId},
