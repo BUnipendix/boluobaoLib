@@ -1,14 +1,36 @@
 package boluobaoLib
 
+import "C"
 import (
+	"crypto/md5"
 	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"github.com/AlexiaVeronica/boluobaoLib/boluobaoapi"
+	"github.com/google/uuid"
+	"github.com/imroc/req/v3"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type Client struct {
-	API *boluobaoapi.API
+	HttpClient    *req.Client
+	baseURL       string
+	UserAgent     string
+	AndroidApiKey string
+	Authorization string
+	Cookie        string
+	DeviceId      string
+	Debug         bool
+	OutputDebug   bool
+	ProxyURL      string
+	ProxyURLArray []string
 }
+
+const username = `androiduser`
+const password = "1a#$51-yt69;*Acv@qxq"
 
 func generateDeviceId() string {
 	uuid := make([]byte, 16)
@@ -22,102 +44,52 @@ func generateDeviceId() string {
 }
 
 func NewClient(options ...Options) *Client {
-	deviceId := generateDeviceId()
 	c := &Client{
-		API: &boluobaoapi.API{
-			HttpClient: boluobaoapi.HttpsClient{
-				Debug:         false,
-				OutputDebug:   false,
-				DeviceId:      deviceId,
-				AndroidApiKey: "FMLxgOdsfxmN!Dt4",
-				APIBaseURL:    "https://api.sfacg.com",
-				Authorization: "Basic YW5kcm9pZHVzZXI6MWEjJDUxLXl0Njk7KkFjdkBxeHE=",
-				UserAgent:     "boluobao/4.8.42(android;25)/XIAOMI/" + deviceId + "/OPPO",
-			},
-		},
+		HttpClient:    req.C().SetTimeout(30 * time.Second),
+		DeviceId:      generateDeviceId(),
+		baseURL:       "https://api.sfacg.com",
+		AndroidApiKey: "FMLxgOdsfxmN!Dt4",
+		//Authorization: "Basic YW5kcm9pZHVzZXI6MWEjJDUxLXl0Njk7KkFjdkBxeHE=",
 	}
+
+	c.UserAgent = "boluobao/4.8.42(android;25)/XIAOMI/" + c.DeviceId + "/OPPO"
 	for _, option := range options {
 		option.Apply(c)
 	}
+	c.HttpClient.SetCommonBasicAuth(username, password)
+	c.HttpClient.SetCommonHeader("User-Agent", c.UserAgent)
+
+	c.HttpClient.SetBaseURL(c.baseURL)
+	c.HttpClient.SetCommonCookies()
+	if c.ProxyURL != "" {
+		c.HttpClient.SetProxyURL(c.ProxyURL)
+	} else if len(c.ProxyURLArray) > 0 {
+		c.HttpClient.SetProxyURL(c.ProxyURLArray[time.Now().UnixNano()%int64(len(c.ProxyURLArray))])
+	}
+	if c.Debug {
+		c.HttpClient.DevMode()
+	}
+	if c.Cookie != "" {
+		c.HttpClient.SetCommonHeader("Cookie", c.Cookie)
+
+	}
 	return c
 }
+func (client *Client) API() *boluobaoapi.API {
+	return &boluobaoapi.API{
 
-type Options interface {
-	Apply(client *Client)
-}
-type OptionFunc func(client *Client)
-
-func (f OptionFunc) Apply(client *Client) {
-	f(client)
-}
-func WithCookie(cookie string) Options {
-	return OptionFunc(func(client *Client) {
-		client.API.HttpClient.Cookie = cookie
-	})
-}
-func WithDeviceId(deviceId string) Options {
-	return OptionFunc(func(client *Client) {
-		client.API.HttpClient.DeviceId = deviceId
-	})
-}
-func WithDebug() Options {
-	return OptionFunc(func(client *Client) {
-		if client.API.HttpClient.Debug {
-			client.API.HttpClient.Debug = false
-		} else {
-			client.API.HttpClient.Debug = true
-		}
-	})
+		HttpRequest: client.HttpClient.R().SetHeader("SFSecurity", client.security()),
+	}
 }
 
-func WithOutputDebug() Options {
-	return OptionFunc(func(client *Client) {
-		if client.API.HttpClient.OutputDebug {
-			client.API.HttpClient.OutputDebug = false
-		} else {
-			client.API.HttpClient.OutputDebug = true
-		}
-	})
-}
-func WithProxyURLArray(proxyURLArray []string) Options {
-	return OptionFunc(func(client *Client) {
-		client.API.HttpClient.ProxyURLArray = proxyURLArray
-	})
-}
-func WithProxyURL(proxyURL string) Options {
-	return OptionFunc(func(client *Client) {
-		client.API.HttpClient.ProxyURL = proxyURL
-	})
-}
-
-func WithAPIBaseURL(apiBaseURL string) Options {
-	return OptionFunc(func(client *Client) {
-		client.API.HttpClient.APIBaseURL = apiBaseURL
-	})
-}
-func WithUserAgent(userAgent string) Options {
-	return OptionFunc(func(client *Client) {
-		client.API.HttpClient.UserAgent = userAgent
-	})
-}
-func WithAuthorization(authorization string) Options {
-	return OptionFunc(func(client *Client) {
-		client.API.HttpClient.Authorization = authorization
-	})
-}
-func WithAndroidApiKey(androidApiKey string) Options {
-	return OptionFunc(func(client *Client) {
-		client.API.HttpClient.AndroidApiKey = androidApiKey
-	})
-}
-func WithSFCommunity(sfCommunity string) Options {
-	return OptionFunc(func(client *Client) {
-		client.API.HttpClient.Cookie = client.API.HttpClient.Cookie + ".SFCommunity=" + sfCommunity + ";"
-	})
-}
-
-func WithSessionAPP(sessionApp string) Options {
-	return OptionFunc(func(client *Client) {
-		client.API.HttpClient.Cookie = client.API.HttpClient.Cookie + "session_APP=" + sessionApp + ";"
-	})
+func (client *Client) security() string {
+	t := strconv.FormatInt(time.Now().UnixNano()/1000000, 10)
+	uuId, newMd5 := strings.ToUpper(uuid.New().String()), md5.New()
+	newMd5.Write([]byte(uuId + t + strings.ToUpper(client.DeviceId) + client.AndroidApiKey))
+	return url.Values{
+		"nonce":       {uuId},
+		"timestamp":   {t},
+		"devicetoken": {strings.ToUpper(client.DeviceId)},
+		"sign":        {strings.ToUpper(hex.EncodeToString(newMd5.Sum(nil)))},
+	}.Encode()
 }
