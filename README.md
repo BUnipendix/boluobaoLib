@@ -1,103 +1,151 @@
-# boluobaoLib
+# BoluobaoLib
 
-`boluobaoLib` is a Go package that provides a client for interacting with the Boluobao API. It allows you to perform various operations such as retrieving book information, getting user information, searching for books, and more.
+BoluobaoLib is a Go library for interacting with the Boluobao API. It provides a convenient way to access various features and data related to novels, user accounts, and more.
+
+## Installation
+
+To use BoluobaoLib in your Go project, you can install it using the following command:
+
+```
+go get github.com/AlexiaVeronica/boluobaoLib
+```
 
 ## Usage
 
-To use the `boluobaoLib` package, you need to import it in your Go code:
-
-```go
-import "github.com/AlexiaVeronica/boluobaoLib"
-```
-
 ### Creating a Client
 
-To interact with the Boluobao API, you first need to create a client. The client provides methods for performing API requests. You can create a client using the `NewClient` function:
-
-```go
-client := boluobaoLib.NewClient()
-```
-
-The `NewClient` function returns a new instance of the `Client` struct.
-
-### Options
-
-The `NewClient` function accepts optional configuration options that allow you to customize the client's behavior. The available options are:
-
-- `WithCookie`: Sets the cookie value for the API requests.
-- `WithDeviceId`: Sets the device ID for the API requests.
-- `WithDebug`: Enables or disables debug mode for the HTTP client.
-- `WithOutputDebug`: Enables or disables outputting debug information to a file.
-- `WithProxyURL`: Sets the proxy URL for the HTTP client.
-
-You can pass these options to the `NewClient` function as variadic arguments:
+To start using BoluobaoLib, you need to create a new client instance. You can do this by calling the `NewClient` function and optionally providing configuration options:
 
 ```go
 client := boluobaoLib.NewClient(
-    boluobaoLib.WithCookie("your-cookie-value"),
-    boluobaoLib.WithDeviceId("your-device-id"),
+    boluobaoLib.WithCookie("your_cookie"),
+    boluobaoLib.WithDeviceId("your_device_id"),
     boluobaoLib.WithDebug(),
-    boluobaoLib.WithOutputDebug(),
-    boluobaoLib.WithProxyURL("your-proxy-url"),
+    // other options...
 )
 ```
 
-### API Methods
+The available options are:
 
-The `Client` struct provides methods for interacting with the Boluobao API. Here are some of the available methods:
+- `WithCookie(cookie string)`: Set the cookie value for authentication.
+- `WithDeviceId(deviceId string)`: Set the device ID for identification.
+- `WithDebug()`: Enable debug mode for detailed logging.
+- `WithOutputDebug()`: Enable output debugging.
+- `WithProxyURLArray(proxyURLArray []string)`: Set an array of proxy URLs.
+- `WithProxyURL(proxyURL string)`: Set a single proxy URL.
+- `WithAPIBaseURL(apiBaseURL string)`: Set the base URL for the API endpoints.
+- `WithUserAgent(userAgent string)`: Set the user agent for HTTP requests.
+- `WithAuthorization(authorization string)`: Set the authorization token.
+- `WithAndroidApiKey(androidApiKey string)`: Set the Android API key.
+- `WithSFCommunity(sfCommunity string)`: Set the SFCommunity value in the cookie.
+- `WithSessionAPP(sessionApp string)`: Set the session_APP value in the cookie.
 
-- `GetBookShelfInfo`: Retrieves the bookshelf information for the authenticated user.
-- `GetBookInfo`: Retrieves information about a specific book.
-- `GetCatalogue`: Retrieves the catalogue of chapters for a specific book.
-- `GetChapterContent`: Retrieves the content of a specific chapter.
-- `GetUserInfo`: Retrieves information about the authenticated user.
-- `GetUserMoney`: Retrieves the user's money information.
-- `GetCurreyIp`: Retrieves the current IP address of the user.
-- `GetRankWeekArray`: Retrieves the weekly ranking list of books.
-- `GetRankMonthArray`: Retrieves the monthly ranking list of books.
-- `GetOtherUserInfo`: Retrieves information about another user.
-- `GetUserWorks`: Retrieves the works (books) of a specific user.
-- `Login`: Performs a login request with the specified username and password.
-- `GetSearch`: Performs a search request with the specified keyword.
+### Making API Requests
 
-Each method returns the corresponding data or an error if the request fails.
-
-## Example
-
-Here's an example that demonstrates how to use the `boluobaoLib` package:
+Once you have created a client, you can use it to make API requests. The `API` struct provides various methods for interacting with the Boluobao API. Here are some examples:
 
 ```go
-package main
+api := client.API()
 
-import (
-	"fmt"
-	"github.com/AlexiaVeronica/boluobaoLib"
-)
+// Get book shelf information
+shelfData, err := api.GetBookShelfInfo()
+if err != nil {
+    log.Fatal(err)
+}
 
-func main() {
-	// Create a client
-	client := boluobaoLib.NewClient()
+// Get book information
+bookID := 123
+bookInfo, err := api.GetBookInfo(bookID)
+if err != nil {
+    log.Fatal(err)
+}
 
-	// Retrieve bookshelf information
-	bookshelf, err := client.GetBookShelfInfo()
-	if err != nil {
-		fmt.Println("Failed to retrieve bookshelf information:", err)
-		return
-	}
-
-	// Print the bookshelf information
-	for _, book := range bookshelf {
-		fmt.Println("Book ID:", book.ID)
-		fmt.Println("Book Title:", book.Title)
-		fmt.Println("Book Author:", book.Author)
-		fmt.Println("Book Status:", book.Status)
-		fmt.Println("--------")
-	}
+// Get chapter content
+chapterID := 456
+content, err := api.GetChapterContent(chapterID)
+if err != nil {
+    log.Fatal(err)
 }
 ```
 
-In this example, we create a client using the `NewClient` function and then use the `GetBookShelfInfo` method to retrieve the bookshelf information. We iterate over the books in the bookshelf and print their details.
+For a complete list of available methods, please refer to the `API` struct in the `api.go` file.
 
-## Conclusion
+### Models
 
-The `boluobaoLib` package provides a convenient way to interact with the Boluobao API in Go. It simplifies the process of making API requests and handling the responses. With the `boluobaoLib` package, you can easily perform various operations related to books and users in your Go applications.
+BoluobaoLib provides several model structs to represent the data returned by the API. These models are defined in the `boluobaomodel` package. Some of the key models include:
+
+- `BookInfoData`: Represents the information of a book.
+- `ChapterList`: Represents a list of chapters.
+- `ContentData`: Represents the content of a chapter.
+- `AccountData`: Represents the information of a user account.
+
+For more details on the available models, please refer to the files in the `boluobaomodel` package.
+
+## Examples
+
+Here are a few examples to help you get started with BoluobaoLib:
+
+### Example 1: Get Book Information
+
+```go
+client := boluobaoLib.NewClient()
+api := client.API()
+
+bookID := 123
+bookInfo, err := api.GetBookInfo(bookID)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Printf("Book Title: %s\n", bookInfo.BookName)
+fmt.Printf("Author: %s\n", bookInfo.AuthorName)
+fmt.Printf("Introduction: %s\n", bookInfo.Expand.Intro)
+```
+
+### Example 2: Get Chapter Content
+
+```go
+client := boluobaoLib.NewClient()
+api := client.API()
+
+chapterID := 456
+content, err := api.GetChapterContent(chapterID)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Printf("Chapter Title: %s\n", content.ChapName)
+fmt.Printf("Content: %s\n", content.Expand.Content)
+```
+
+### Example 3: Login and Get User Information
+
+```go
+client := boluobaoLib.NewClient()
+api := client.API()
+
+username := "your_username"
+password := "your_password"
+cookie, err := api.Login(username, password)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Set the obtained cookie in the client
+client = boluobaoLib.NewClient(boluobaoLib.WithCookie(cookie))
+api = client.API()
+
+userInfo, err := api.GetUserInfo()
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Printf("Username: %s\n", userInfo.UserName)
+fmt.Printf("Nickname: %s\n", userInfo.NickName)
+fmt.Printf("Email: %s\n", userInfo.Email)
+```
+
+## Contributing
+
+Contributions to BoluobaoLib are welcome! If you find any issues or have suggestions for improvements, please open an issue or submit a pull request on the GitHub repository.
+ 
