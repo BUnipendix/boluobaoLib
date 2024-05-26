@@ -27,11 +27,7 @@ func WithDebug() Options {
 
 func WithOutputDebug() Options {
 	return OptionFunc(func(client *Client) {
-		//if client.API.HttpClient.OutputDebug {
-		//	client.API.HttpClient.OutputDebug = false
-		//} else {
-		//	client.API.HttpClient.OutputDebug = true
-		//}
+		client.Debug = !client.Debug
 	})
 }
 func WithProxyURLArray(proxyURLArray []string) Options {

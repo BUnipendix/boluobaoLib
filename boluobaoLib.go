@@ -46,10 +46,10 @@ func NewClient(options ...Options) *Client {
 		HttpClient:    req.NewClient().SetTimeout(30 * time.Second),
 		DeviceId:      generateDeviceId(),
 		baseURL:       "https://api.sfacg.com",
-		AndroidApiKey: "FMLxgOdsfxmN!Dt4",
+		AndroidApiKey: "FN_Q29XHVmfV3mYX",
 	}
 
-	c.UserAgent = "boluobao/4.8.42(android;25)/XIAOMI/" + c.DeviceId + "/OPPO"
+	c.UserAgent = "boluobao/5.0.62(android;25)/OPPO/" + c.DeviceId + "/OPPO"
 	for _, option := range options {
 		option.Apply(c)
 	}

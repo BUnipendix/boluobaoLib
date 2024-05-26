@@ -6,6 +6,7 @@ import (
 	"github.com/imroc/req/v3"
 	"log"
 	"strconv"
+	"unicode"
 )
 
 type API struct {
@@ -93,6 +94,28 @@ func (sfacg *API) GetChapterContent(chapterId any) (*boluobaomodel.ContentData, 
 	if m.Data.Expand.Content == "" {
 		return nil, fmt.Errorf("get chapter content failed: no result")
 	}
+	var decodeConfusionContent []rune
+	var defaultConfusionA = []rune(confusion1)
+	for _, c := range m.Data.Expand.Content {
+		lowerC := unicode.ToLower(c)
+		index := -1
+		for i, r := range []rune(confusion2) {
+			if r == lowerC {
+				index = i
+				break
+			}
+		}
+		if index != -1 {
+			if unicode.IsLower(c) {
+				decodeConfusionContent = append(decodeConfusionContent, defaultConfusionA[index])
+			} else {
+				decodeConfusionContent = append(decodeConfusionContent, unicode.ToUpper(defaultConfusionA[index]))
+			}
+		} else {
+			decodeConfusionContent = append(decodeConfusionContent, c)
+		}
+	}
+	m.Data.Expand.Content = string(decodeConfusionContent)
 	return &m.Data, nil
 }
 
