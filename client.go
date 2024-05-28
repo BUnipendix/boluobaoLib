@@ -27,9 +27,6 @@ type Client struct {
 	ProxyURLArray []string
 }
 
-const username = `androiduser`
-const password = "1a#$51-yt69;*Acv@qxq"
-
 func generateDeviceId() string {
 	uuid := make([]byte, 16)
 	_, err := rand.Read(uuid)
@@ -43,13 +40,13 @@ func generateDeviceId() string {
 
 func NewClient(options ...Options) *Client {
 	c := &Client{
-		HttpClient:    req.NewClient().SetTimeout(30 * time.Second),
+		HttpClient:    req.NewClient().SetTimeout(timeout * time.Second),
 		DeviceId:      generateDeviceId(),
-		baseURL:       "https://api.sfacg.com",
-		AndroidApiKey: "FN_Q29XHVmfV3mYX",
+		baseURL:       baseURL,
+		AndroidApiKey: androidApiKey,
 	}
 
-	c.UserAgent = "boluobao/5.0.62(android;25)/OPPO/" + c.DeviceId + "/OPPO"
+	c.UserAgent = fmt.Sprintf(userAgent, c.DeviceId)
 	for _, option := range options {
 		option.Apply(c)
 	}
