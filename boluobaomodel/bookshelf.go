@@ -18,6 +18,33 @@ type InfoData struct {
 	Data   []ShelfData `json:"data"`
 }
 
+func (shelf *InfoData) EachShelf(f func(int, ShelfData)) {
+	if shelf.Data != nil {
+		for i, book := range shelf.Data {
+			f(i, book)
+		}
+	}
+}
+func (shelf *InfoData) GetShelf(index int) *ShelfData {
+	if shelf.Data != nil && index < len(shelf.Data) {
+		return &shelf.Data[index]
+	}
+	return nil
+}
+func (bookshelf *ShelfData) EachBookshelf(f func(int, BookInfoData)) {
+	if bookshelf.Expand.Novels != nil {
+		for i, book := range bookshelf.Expand.Novels {
+			f(i, book)
+		}
+	}
+}
+func (bookshelf *ShelfData) GetBookshelf(index int) *BookInfoData {
+	if bookshelf.Expand.Novels != nil && index < len(bookshelf.Expand.Novels) {
+		return &bookshelf.Expand.Novels[index]
+	}
+	return nil
+}
+
 type ConsumeData struct {
 	EntityId                int    `json:"entityId"`
 	ConsumeFireMoney        int    `json:"consumeFireMoney"`

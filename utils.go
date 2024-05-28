@@ -1,6 +1,13 @@
 package boluobaoLib
 
-import "github.com/AlexiaVeronica/boluobaoLib/boluobaomodel"
+import (
+	"bufio"
+	"fmt"
+	"github.com/AlexiaVeronica/boluobaoLib/boluobaomodel"
+	"os"
+	"strconv"
+	"strings"
+)
 
 const (
 	username      = `androiduser`
@@ -16,3 +23,24 @@ type continueFunction func(chapter boluobaomodel.ChapterList) bool
 type contentFunction func(chapter *boluobaomodel.ContentData)
 
 type bookInfoFunction func(index int, bookInfo boluobaomodel.BookInfo)
+
+func GetUserInput(prompt string) int {
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Print(prompt)
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Println("Error reading input, please try again.")
+			continue
+		}
+
+		input = strings.TrimSpace(input)
+		number, err := strconv.Atoi(input)
+		if err != nil {
+			fmt.Println("Invalid input, please enter a valid number.")
+			continue
+		}
+
+		return number
+	}
+}

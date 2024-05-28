@@ -41,7 +41,7 @@ func (sfacg *API) HttpClientPost(pathURL string, q any, m interface{}) error {
 	}
 	return nil
 }
-func (sfacg *API) GetBookShelfInfo() ([]boluobaomodel.ShelfData, error) {
+func (sfacg *API) GetBookShelfInfo() (*boluobaomodel.InfoData, error) {
 	var m boluobaomodel.InfoData
 	err := sfacg.HttpClientGet("user/Pockets", map[string]string{"expand": "novels"}, &m)
 	if err != nil {
@@ -53,7 +53,7 @@ func (sfacg *API) GetBookShelfInfo() ([]boluobaomodel.ShelfData, error) {
 	if len(m.Data) == 0 {
 		return nil, fmt.Errorf("get book shelf information failed: no result")
 	}
-	return m.Data, nil
+	return &m, nil
 }
 
 func (sfacg *API) GetBookInfo(bookId any) (*boluobaomodel.BookInfoData, error) {
@@ -272,7 +272,7 @@ func (sfacg *API) Login(username string, password string) (string, error) {
 	return loginCookie, nil
 }
 
-func (sfacg *API) GetSearch(keyword string, page int) ([]boluobaomodel.BookInfoData, error) {
+func (sfacg *API) GetSearch(keyword string, page int) (*boluobaomodel.Search, error) {
 	var m boluobaomodel.Search
 	params := map[string]string{"q": keyword, "page": strconv.Itoa(page), "size": "15", "expand": bookInfoExpand}
 	err := sfacg.HttpClientGet("/search/novels/result", params, &m)
@@ -285,5 +285,5 @@ func (sfacg *API) GetSearch(keyword string, page int) ([]boluobaomodel.BookInfoD
 	if len(m.Data.Novels) == 0 {
 		return nil, fmt.Errorf("get search failed: no result")
 	}
-	return m.Data.Novels, nil
+	return &m, nil
 }

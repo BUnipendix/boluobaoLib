@@ -13,3 +13,18 @@ type Search struct {
 		Albums []interface{}  `json:"albums"`
 	} `json:"data"`
 }
+
+func (search *Search) EachBook(f func(int, BookInfoData)) {
+	if search.Data.Novels != nil {
+		for i, book := range search.Data.Novels {
+			f(i, book)
+		}
+	}
+
+}
+func (search *Search) GetBook(index int) *BookInfoData {
+	if search.Data.Novels != nil && index < len(search.Data.Novels) {
+		return &search.Data.Novels[index]
+	}
+	return nil
+}
