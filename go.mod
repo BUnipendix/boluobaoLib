@@ -1,8 +1,11 @@
 module github.com/AlexiaVeronica/boluobaoLib
 
-go 1.20
+go 1.22.0
 
-require github.com/imroc/req/v3 v3.42.1
+require (
+	github.com/AlexiaVeronica/input v0.0.1
+	github.com/imroc/req/v3 v3.42.1
+)
 
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect

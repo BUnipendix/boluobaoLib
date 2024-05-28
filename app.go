@@ -3,6 +3,7 @@ package boluobaoLib
 import (
 	"fmt"
 	"github.com/AlexiaVeronica/boluobaoLib/boluobaomodel"
+	"github.com/AlexiaVeronica/input"
 	"strconv"
 	"sync"
 )
@@ -65,7 +66,7 @@ func (app *APP) Search(keyword string, f1 continueFunction, f2 contentFunction) 
 	searchInfo.EachBook(func(index int, book boluobaomodel.BookInfoData) {
 		fmt.Println("Index:", index, "\t\t\tBookName:", book.NovelName)
 	})
-	bookInfo := searchInfo.GetBook(GetUserInput("Please input the index of the book you want to download"))
+	bookInfo := searchInfo.GetBook(input.IntInput("Please input the index of the book you want to download"))
 	app.Download(strconv.Itoa(bookInfo.NovelId), f1, f2)
 }
 
@@ -78,11 +79,11 @@ func (app *APP) Bookshelf(f1 continueFunction, f2 contentFunction) {
 	shelf.EachShelf(func(index int, shelf boluobaomodel.ShelfData) {
 		fmt.Println("Index:", index, "\t\t\tShelfName:", shelf.Name, "\t\t\tShelfNum:", len(shelf.Expand.Novels))
 	})
-	bookshelf := shelf.GetShelf(GetUserInput("Please input the index of the bookshelf you want to download"))
+	bookshelf := shelf.GetShelf(input.IntInput("Please input the index of the bookshelf you want to download"))
 	bookshelf.EachBookshelf(func(index int, book boluobaomodel.BookInfoData) {
 		fmt.Println("Index:", index, "\t\t\tBookName:", book.NovelName)
 	})
-	bookInfo := bookshelf.GetBookshelf(GetUserInput("Please input the index of the book you want to download"))
+	bookInfo := bookshelf.GetBookshelf(input.IntInput("Please input the index of the book you want to download"))
 	app.Download(strconv.Itoa(bookInfo.NovelId), f1, f2)
 
 }
