@@ -11,84 +11,6 @@ type API struct {
 	HttpRequest *req.Request
 }
 
-type Request[T any] struct {
-	HttpRequest *req.Request
-}
-
-func (request *Request[T]) handlePostResponse(url string, body any) (*T, error) {
-	res, err := request.HttpRequest.SetBody(body).Post(url)
-	if err != nil {
-		return nil, err
-	}
-	if res == nil {
-		return nil, fmt.Errorf("response is nil")
-	}
-
-	data := new(T)
-	if err = res.UnmarshalJson(data); err != nil {
-		return nil, err
-	}
-
-	if response, ok := any(data).(interface {
-		GetCode() int
-		GetTip() string
-		IsSuccess() bool
-	}); ok && !response.IsSuccess() {
-		return nil, fmt.Errorf("error: %s", response.GetTip())
-	} else if !ok {
-		return nil, fmt.Errorf("response does not implement required methods")
-	}
-	switch v := any(data).(type) {
-	case boluobaomodel.LoginStatus:
-		for _, cookie := range res.Cookies() {
-			v.Cookie += cookie.Name + "=" + cookie.Value + ";"
-		}
-		if v.Cookie == "" {
-			return nil, fmt.Errorf("login failed: cookie is empty")
-		}
-	}
-	return data, nil
-}
-
-func (request *Request[T]) handleGetResponse(url string, params map[string]string) (*T, error) {
-	res, err := request.HttpRequest.SetQueryParams(params).Get(url)
-	if err != nil {
-		return nil, err
-	}
-	if res == nil {
-		return nil, fmt.Errorf("response is nil")
-	}
-
-	data := new(T)
-	if err = res.UnmarshalJson(data); err != nil {
-		return nil, err
-	}
-
-	if response, ok := any(data).(interface {
-		GetCode() int
-		GetTip() string
-		IsSuccess() bool
-	}); ok && !response.IsSuccess() {
-		return nil, fmt.Errorf("error: %s", response.GetTip())
-	} else if !ok {
-		return nil, fmt.Errorf("response does not implement required methods")
-	}
-	switch v := any(data).(type) {
-	case boluobaomodel.Content:
-		if v.Data.Expand.Content == "" {
-			return nil, fmt.Errorf("get chapter content failed: no result")
-		} else {
-			v.Data.Expand.Content = decodeContent(v.Data.Expand.Content)
-		}
-	}
-
-	return data, nil
-}
-
-func newRequest[T any](HttpRequest *req.Request) *Request[T] {
-	return &Request[T]{HttpRequest: HttpRequest}
-}
-
 func (sfacg *API) GetBookShelfInfo() (*boluobaomodel.InfoData, error) {
 	return newRequest[boluobaomodel.InfoData](sfacg.HttpRequest).handleGetResponse("user/Pockets", map[string]string{"expand": "novels"})
 }
@@ -155,12 +77,12 @@ func (sfacg *API) GetRankAllArray(rtype string, page int) (*boluobaomodel.Rank, 
 }
 
 func (sfacg *API) GetOtherUserInfo(accountId string) (*boluobaomodel.Users, error) {
-	return newRequest[boluobaomodel.Users](sfacg.HttpRequest).handleGetResponse("users/"+accountId, nil)
+	return newRequest[boluobaomodel.Users](sfacg.HttpRequest).handleGetResponse(fmt.Sprintf("users/%v", accountId), nil)
 }
 
 func (sfacg *API) GetUserWorks(accountId string) (*boluobaomodel.AuthorInfo, error) {
 	params := map[string]string{"expand": "typeName,sysTags,isbranch"}
-	return newRequest[boluobaomodel.AuthorInfo](sfacg.HttpRequest).handleGetResponse("users/"+accountId+"/novels", params)
+	return newRequest[boluobaomodel.AuthorInfo](sfacg.HttpRequest).handleGetResponse(fmt.Sprintf("users/%v/novels", accountId), params)
 }
 
 func (sfacg *API) Login(username string, password string) (*boluobaomodel.LoginStatus, error) {

@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"github.com/AlexiaVeronica/boluobaoLib/boluobaoapi"
 	"github.com/AlexiaVeronica/req/v3"
 	"net/url"
 	"strconv"
@@ -69,8 +68,8 @@ func NewClient(options ...Options) *Client {
 	}
 	return c
 }
-func (client *Client) API() *boluobaoapi.API {
-	return &boluobaoapi.API{
+func (client *Client) API() *API {
+	return &API{
 
 		HttpRequest: client.HttpClient.R().SetHeader("SFSecurity", client.security()),
 	}

@@ -1,6 +1,11 @@
 package boluobaoLib
 
-import "unicode"
+import (
+	"fmt"
+	"github.com/AlexiaVeronica/boluobaoLib/boluobaomodel"
+	"github.com/AlexiaVeronica/req/v3"
+	"unicode"
+)
 
 const bookInfoExpand = "chapterCount,bigBgBanner,bigNovelCover,typeName,intro,fav,ticket,pointCount,tags,sysTags,signlevel,discount,discountExpireDate,totalNeedFireMoney,rankinglist,originTotalNeedFireMoney,firstchapter,latestchapter,latestcommentdate,essaytag,auditCover,preOrderInfo,customTag,topic,unauditedCustomtag,homeFlag,isbranch,essayawards"
 const userInfoExpand = "vipInfo,welfareCoin,isRealNameAuth,realnameinfo,changeNickNameInfo,welfareMoney,redpacketCode,useWelfaresys,usedRedpacketCode,hasOrderChapWithFireMoney,hasUnlockChapWithAd,hasActiveUnlockChapWithAd,hasOrderedVipChaps,hasPaidFirstTime,growup,newVip"
@@ -32,6 +37,84 @@ func decodeContent(content string) string {
 		}
 	}
 	return string(decodeConfusionContent)
+}
+
+type Request[T any] struct {
+	HttpRequest *req.Request
+}
+
+func (request *Request[T]) handlePostResponse(url string, body any) (*T, error) {
+	res, err := request.HttpRequest.SetBody(body).Post(url)
+	if err != nil {
+		return nil, err
+	}
+	if res == nil {
+		return nil, fmt.Errorf("response is nil")
+	}
+
+	data := new(T)
+	if err = res.UnmarshalJson(data); err != nil {
+		return nil, err
+	}
+
+	if response, ok := any(data).(interface {
+		GetCode() int
+		GetTip() string
+		IsSuccess() bool
+	}); ok && !response.IsSuccess() {
+		return nil, fmt.Errorf("error: %s", response.GetTip())
+	} else if !ok {
+		return nil, fmt.Errorf("response does not implement required methods")
+	}
+	switch v := any(data).(type) {
+	case boluobaomodel.LoginStatus:
+		for _, cookie := range res.Cookies() {
+			v.Cookie += cookie.Name + "=" + cookie.Value + ";"
+		}
+		if v.Cookie == "" {
+			return nil, fmt.Errorf("login failed: cookie is empty")
+		}
+	}
+	return data, nil
+}
+
+func (request *Request[T]) handleGetResponse(url string, params map[string]string) (*T, error) {
+	res, err := request.HttpRequest.SetQueryParams(params).Get(url)
+	if err != nil {
+		return nil, err
+	}
+	if res == nil {
+		return nil, fmt.Errorf("response is nil")
+	}
+
+	data := new(T)
+	if err = res.UnmarshalJson(data); err != nil {
+		return nil, err
+	}
+
+	if response, ok := any(data).(interface {
+		GetCode() int
+		GetTip() string
+		IsSuccess() bool
+	}); ok && !response.IsSuccess() {
+		return nil, fmt.Errorf("error: %s", response.GetTip())
+	} else if !ok {
+		return nil, fmt.Errorf("response does not implement required methods")
+	}
+	switch v := any(data).(type) {
+	case boluobaomodel.Content:
+		if v.Data.Expand.Content == "" {
+			return nil, fmt.Errorf("get chapter content failed: no result")
+		} else {
+			v.Data.Expand.Content = decodeContent(v.Data.Expand.Content)
+		}
+	}
+
+	return data, nil
+}
+
+func newRequest[T any](HttpRequest *req.Request) *Request[T] {
+	return &Request[T]{HttpRequest: HttpRequest}
 }
 
 /*
