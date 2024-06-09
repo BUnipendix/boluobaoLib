@@ -107,14 +107,13 @@ func (sfacg *API) GetChapterContent(chapterId any) (*boluobaomodel.Content, erro
 	return newRequest[boluobaomodel.Content](sfacg.HttpRequest).handleGetResponse(fmt.Sprintf("Chaps/%v", chapterId), params)
 }
 
-func (sfacg *API) GetNewVipContent(bookId any, chapterId int) (*boluobaomodel.Status, error) {
-	body := BuyVipContentBody{
-		OrderType: "readOrder",
-		OrderAll:  false,
-		AutoOrder: true,
-		ChapIds:   []int{chapterId},
-	}
-	return newRequest[boluobaomodel.Status](sfacg.HttpRequest).handlePostResponse(fmt.Sprintf("novels/%v/orderedchaps", bookId), body)
+func (sfacg *API) GetNewVipContent(bookId any, chapterIds ...int) (*boluobaomodel.Status, error) {
+	return newRequest[boluobaomodel.Status](sfacg.HttpRequest).handlePostResponse(fmt.Sprintf("novels/%v/orderedchaps", bookId), struct {
+		OrderType string `json:"orderType"`
+		OrderAll  bool   `json:"orderAll"`
+		AutoOrder bool   `json:"autoOrder"`
+		ChapIds   []int  `json:"chapIds"`
+	}{OrderType: "readOrder", OrderAll: false, AutoOrder: true, ChapIds: chapterIds})
 }
 
 func (sfacg *API) GeContentTsukkomis(row, chapterId, page int) (*boluobaomodel.Tsukkomis, error) {
@@ -165,8 +164,10 @@ func (sfacg *API) GetUserWorks(accountId string) (*boluobaomodel.AuthorInfo, err
 }
 
 func (sfacg *API) Login(username string, password string) (*boluobaomodel.LoginStatus, error) {
-	body := LoginBody{Username: username, Password: password}
-	return newRequest[boluobaomodel.LoginStatus](sfacg.HttpRequest).handlePostResponse("sessions", body)
+	return newRequest[boluobaomodel.LoginStatus](sfacg.HttpRequest).handlePostResponse("sessions", struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}{Username: username, Password: password})
 }
 
 func (sfacg *API) GetSearch(keyword string, page int) (*boluobaomodel.Search, error) {
