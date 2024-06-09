@@ -8,6 +8,10 @@ type Status struct {
 	MsgType   int    `json:"msgType"`
 	Msg       string `json:"msg"`
 }
+type LoginStatus struct {
+	Status
+	Cookie string `json:"cookie"`
+}
 
 func (status *Status) GetCode() int {
 	return status.HTTPCode
