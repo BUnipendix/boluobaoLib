@@ -51,10 +51,10 @@ func (app *APP) eachChapter(f func(boluobaomodel.ChapterList)) {
 	}
 }
 
-func (app *APP) Download(continueFunc continueFunction, contentFunction contentFunction) {
+func (app *APP) Download(continueFunc continueFunction, contentFunction contentFunction) *APP {
 	if app.bookInfo == nil {
 		fmt.Println("Please set book info first!")
-		return
+		return app
 	}
 
 	var wg sync.WaitGroup
@@ -81,26 +81,27 @@ func (app *APP) Download(continueFunc continueFunction, contentFunction contentF
 	})
 
 	wg.Wait()
+	return app
 }
 
-func (app *APP) Search(keyword string, continueFunc continueFunction, contentFunc contentFunction) {
+func (app *APP) Search(keyword string, continueFunc continueFunction, contentFunc contentFunction) *APP {
 	searchInfo, err := app.client.API().GetSearch(keyword, 0)
 	if err != nil {
 		fmt.Println("search failed! " + err.Error())
-		return
+		return app
 	}
 	searchInfo.EachBook(func(index int, book boluobaomodel.BookInfoData) {
 		fmt.Println("Index:", index, "\tBookName:", book.NovelName)
 	})
 	app.bookInfo = searchInfo.GetBook(input.IntInput("Please input the index of the book you want to download"))
-	app.Download(continueFunc, contentFunc)
+	return app.Download(continueFunc, contentFunc)
 }
 
-func (app *APP) Bookshelf(continueFunc continueFunction, contentFunction contentFunction) {
+func (app *APP) Bookshelf(continueFunc continueFunction, contentFunction contentFunction) *APP {
 	shelf, err := app.client.API().GetBookShelfInfo()
 	if err != nil {
 		fmt.Println("get bookshelf error:", err)
-		return
+		return app
 	}
 	shelf.EachShelf(func(index int, shelf boluobaomodel.ShelfData) {
 		fmt.Println("Index:", index, "\tShelfName:", shelf.Name, "\tShelfNum:", len(shelf.Expand.Novels))
@@ -110,5 +111,5 @@ func (app *APP) Bookshelf(continueFunc continueFunction, contentFunction content
 		fmt.Println("Index:", index, "\tBookName:", book.NovelName)
 	})
 	app.bookInfo = bookshelf.GetBookshelf(input.IntInput("Please input the index of the book you want to download"))
-	app.Download(continueFunc, contentFunction)
+	return app.Download(continueFunc, contentFunction)
 }
