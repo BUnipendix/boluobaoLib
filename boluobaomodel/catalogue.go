@@ -1,8 +1,8 @@
 package boluobaomodel
 
 type Catalogue struct {
-	Status Status `json:"status"`
-	Data   Data   `json:"data"`
+	Status `json:"status"`
+	Data   Data `json:"data"`
 }
 type ChapterList struct {
 	ChapID              int         `json:"chapId"`

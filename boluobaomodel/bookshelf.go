@@ -14,7 +14,7 @@ type ShelfData struct {
 }
 
 type InfoData struct {
-	Status Status      `json:"status"`
+	Status `json:"status"`
 	Data   []ShelfData `json:"data"`
 }
 
@@ -26,16 +26,14 @@ func (shelf *InfoData) EachShelf(f func(int, ShelfData)) {
 	}
 }
 func (shelf *InfoData) GetShelf(index int) *ShelfData {
-	if shelf.Data != nil && index < len(shelf.Data) {
+	if index >= 0 && index < len(shelf.Data) {
 		return &shelf.Data[index]
 	}
 	return nil
 }
 func (bookshelf *ShelfData) EachBookshelf(f func(int, BookInfoData)) {
-	if bookshelf.Expand.Novels != nil {
-		for i, book := range bookshelf.Expand.Novels {
-			f(i, book)
-		}
+	for i, book := range bookshelf.Expand.Novels {
+		f(i, book)
 	}
 }
 func (bookshelf *ShelfData) GetBookshelf(index int) *BookInfoData {

@@ -1,7 +1,7 @@
 package boluobaomodel
 
 type Users struct {
-	Status Status      `json:"status"`
+	Status `json:"status"`
 	Data   AccountData `json:"data"`
 }
 
@@ -18,15 +18,15 @@ type AccountData struct {
 	RegisterDate string `json:"registerDate"`
 }
 type Account struct {
-	Status Status      `json:"status"`
+	Status `json:"status"`
 	Data   AccountData `json:"data"`
 }
 type AccountIp struct {
-	Status Status        `json:"status"`
+	Status `json:"status"`
 	Data   AccountIpData `json:"data"`
 }
 type AuthorInfo struct {
-	Status Status         `json:"status"`
+	Status `json:"status"`
 	Data   []BookInfoData `json:"data"`
 }
 type AccountIpData struct {
@@ -35,7 +35,7 @@ type AccountIpData struct {
 	CountryCode int    `json:"countryCode"`
 }
 type AccountComment struct {
-	Status Status `json:"status"`
+	Status `json:"status"`
 	Data   []struct {
 		PostDate string `json:"postDate"`
 		Post     struct {
@@ -76,13 +76,8 @@ type AccountComment struct {
 	} `json:"data"`
 }
 type Money struct {
-	Status struct {
-		HttpCode  int         `json:"httpCode"`
-		ErrorCode int         `json:"errorCode"`
-		MsgType   int         `json:"msgType"`
-		Msg       interface{} `json:"msg"`
-	} `json:"status"`
-	Data MoneyData `json:"data"`
+	Status `json:"status"`
+	Data   MoneyData `json:"data"`
 }
 
 type MoneyData struct {

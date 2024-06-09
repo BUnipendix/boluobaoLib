@@ -86,6 +86,6 @@ type BookInfoData struct {
 }
 
 type BookInfo struct {
-	Status Status       `json:"status"`
+	Status `json:"status"`
 	Data   BookInfoData `json:"data"`
 }

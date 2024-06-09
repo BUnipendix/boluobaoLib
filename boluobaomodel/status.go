@@ -9,7 +9,7 @@ type Status struct {
 	Msg       string `json:"msg"`
 }
 type LoginStatus struct {
-	Status
+	*Status
 	Cookie string `json:"cookie"`
 }
 

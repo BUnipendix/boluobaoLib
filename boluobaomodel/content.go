@@ -31,11 +31,6 @@ type ContentData struct {
 	AuditStatus int    `json:"auditStatus"`
 }
 type Content struct {
-	Status struct {
-		HttpCode  int         `json:"httpCode"`
-		ErrorCode int         `json:"errorCode"`
-		MsgType   int         `json:"msgType"`
-		Msg       interface{} `json:"msg"`
-	} `json:"status"`
-	Data ContentData `json:"data"`
+	Status `json:"status"`
+	Data   ContentData `json:"data"`
 }
