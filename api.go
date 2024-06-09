@@ -29,7 +29,7 @@ func (sfacg *API) GetChapterContent(chapterId any) (*boluobaomodel.Content, erro
 	return newRequest[boluobaomodel.Content](sfacg.HttpRequest).handleGetResponse(fmt.Sprintf("Chaps/%v", chapterId), params)
 }
 
-func (sfacg *API) GetNewVipContent(bookId any, chapterIds ...int) (*boluobaomodel.Status, error) {
+func (sfacg *API) OrderedChaps(bookId any, chapterIds ...int) (*boluobaomodel.Status, error) {
 	return newRequest[boluobaomodel.Status](sfacg.HttpRequest).handlePostResponse(fmt.Sprintf("novels/%v/orderedchaps", bookId), struct {
 		OrderType string `json:"orderType"`
 		OrderAll  bool   `json:"orderAll"`

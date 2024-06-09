@@ -102,12 +102,13 @@ func (request *Request[T]) handleGetResponse(url string, params map[string]strin
 		return nil, fmt.Errorf("response does not implement required methods")
 	}
 	switch v := any(data).(type) {
-	case boluobaomodel.Content:
+	case *boluobaomodel.Content:
 		if v.Data.Expand.Content == "" {
 			return nil, fmt.Errorf("get chapter content failed: no result")
 		} else {
 			v.Data.Expand.Content = decodeContent(v.Data.Expand.Content)
 		}
+		data = any(v).(*T)
 	}
 
 	return data, nil

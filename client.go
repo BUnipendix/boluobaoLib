@@ -68,9 +68,12 @@ func NewClient(options ...Options) *Client {
 	}
 	return c
 }
+func (client *Client) SetCookie(cookie string) *Client {
+	client.Cookie = cookie
+	return client
+}
 func (client *Client) API() *API {
 	return &API{
-
 		HttpRequest: client.HttpClient.R().SetHeader("SFSecurity", client.security()),
 	}
 }
