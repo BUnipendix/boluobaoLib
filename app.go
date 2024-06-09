@@ -14,7 +14,7 @@ type APP struct {
 }
 
 func (client *Client) APP() *APP {
-	return &APP{client: client, threadNum: 32}
+	return &APP{client: client, threadNum: threadNum}
 }
 
 func (app *APP) MergeText(f func(chapter boluobaomodel.ChapterList)) {
@@ -48,7 +48,7 @@ func (app *APP) eachChapter(f func(boluobaomodel.ChapterList)) {
 	}
 }
 
-func (app *APP) Download(f1 continueFunction, f2 contentFunction) {
+func (app *APP) Download(continueFunc continueFunction, contentFunction contentFunction) {
 	if app.bookInfo == nil {
 		fmt.Println("Please set book info first!")
 		return
@@ -66,13 +66,13 @@ func (app *APP) Download(f1 continueFunction, f2 contentFunction) {
 				wg.Done()
 				<-ch
 			}()
-			if f1(app.bookInfo, chapter) {
+			if continueFunc(app.bookInfo, chapter) {
 				content, err := app.client.API().GetChapterContent(chapter.ChapID)
 				if err != nil {
 					fmt.Println("get chapter content error:", err)
 					return
 				}
-				f2(app.bookInfo, &content.Data)
+				contentFunction(app.bookInfo, &content.Data)
 			}
 		}(chapter)
 	})
@@ -80,7 +80,7 @@ func (app *APP) Download(f1 continueFunction, f2 contentFunction) {
 	wg.Wait()
 }
 
-func (app *APP) Search(keyword string, f1 continueFunction, f2 contentFunction) {
+func (app *APP) Search(keyword string, continueFunc continueFunction, contentFunc contentFunction) {
 	searchInfo, err := app.client.API().GetSearch(keyword, 0)
 	if err != nil {
 		fmt.Println("search failed! " + err.Error())
@@ -90,10 +90,10 @@ func (app *APP) Search(keyword string, f1 continueFunction, f2 contentFunction) 
 		fmt.Println("Index:", index, "\tBookName:", book.NovelName)
 	})
 	app.bookInfo = searchInfo.GetBook(input.IntInput("Please input the index of the book you want to download"))
-	app.Download(f1, f2)
+	app.Download(continueFunc, contentFunc)
 }
 
-func (app *APP) Bookshelf(f1 continueFunction, f2 contentFunction) {
+func (app *APP) Bookshelf(continueFunc continueFunction, contentFunction contentFunction) {
 	shelf, err := app.client.API().GetBookShelfInfo()
 	if err != nil {
 		fmt.Println("get bookshelf error:", err)
@@ -107,5 +107,5 @@ func (app *APP) Bookshelf(f1 continueFunction, f2 contentFunction) {
 		fmt.Println("Index:", index, "\tBookName:", book.NovelName)
 	})
 	app.bookInfo = bookshelf.GetBookshelf(input.IntInput("Please input the index of the book you want to download"))
-	app.Download(f1, f2)
+	app.Download(continueFunc, contentFunction)
 }
