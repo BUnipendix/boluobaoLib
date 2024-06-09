@@ -1,4 +1,4 @@
-package boluobaoapi
+package boluobaoLib
 
 import (
 	"fmt"

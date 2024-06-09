@@ -1,4 +1,4 @@
-package boluobaoapi
+package boluobaoLib
 
 type BuyVipContentBody struct {
 	OrderType string `json:"orderType"`
