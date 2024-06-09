@@ -34,6 +34,9 @@ func (app *APP) SetBookInfo(bookInfo *boluobaomodel.BookInfoData) *APP {
 	app.bookInfo = bookInfo
 	return app
 }
+func (app *APP) GetBookInfo() *boluobaomodel.BookInfoData {
+	return app.bookInfo
+}
 
 func (app *APP) eachChapter(f func(boluobaomodel.ChapterList)) {
 	divisionList, err := app.client.API().GetCatalogue(app.bookInfo.NovelId)
