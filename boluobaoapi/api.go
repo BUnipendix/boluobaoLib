@@ -4,286 +4,172 @@ import (
 	"fmt"
 	"github.com/AlexiaVeronica/boluobaoLib/boluobaomodel"
 	"github.com/AlexiaVeronica/req/v3"
-	"log"
 	"strconv"
-	"unicode"
 )
 
 type API struct {
 	HttpRequest *req.Request
 }
 
-func (sfacg *API) HttpClientGet(pathURL string, q map[string]string, m interface{}) error {
-	response, err := sfacg.HttpRequest.SetQueryParams(q).Get(pathURL)
-	if err != nil {
-		return err
-	}
-	if response.GetStatusCode() != 200 {
-		return fmt.Errorf("get failed: %v", response.String())
-	}
-	err = response.UnmarshalJson(m)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-func (sfacg *API) HttpClientPost(pathURL string, q any, m interface{}) error {
-	response, err := sfacg.HttpRequest.SetBody(q).Post(pathURL)
-	if err != nil {
-		return err
-	}
-	if response.GetStatusCode() != 200 {
-		return fmt.Errorf("get failed: %v", response.String())
-	}
-	err = response.UnmarshalJson(m)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-func (sfacg *API) GetBookShelfInfo() (*boluobaomodel.InfoData, error) {
-	var m boluobaomodel.InfoData
-	err := sfacg.HttpClientGet("user/Pockets", map[string]string{"expand": "novels"}, &m)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
-	}
-	if m.Status.HTTPCode != 200 {
-		return nil, fmt.Errorf("get book shelf information failed: %v", m.Status.Msg)
-	}
-	if len(m.Data) == 0 {
-		return nil, fmt.Errorf("get book shelf information failed: no result")
-	}
-	return &m, nil
+type Request[T any] struct {
+	HttpRequest *req.Request
 }
 
-func (sfacg *API) GetBookInfo(bookId any) (*boluobaomodel.BookInfoData, error) {
-	var m boluobaomodel.BookInfo
-	err := sfacg.HttpClientGet(fmt.Sprintf("novels/%v", bookId), map[string]string{"expand": bookInfoExpand}, &m)
+func (request *Request[T]) handlePostResponse(url string, body any) (*T, error) {
+	res, err := request.HttpRequest.SetBody(body).Post(url)
 	if err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
+		return nil, err
 	}
-	if m.Status.HTTPCode != 200 {
-		return nil, fmt.Errorf("get book information failed: %v", m.Status.Msg)
+	if res == nil {
+		return nil, fmt.Errorf("response is nil")
 	}
-	return &m.Data, nil
-}
 
-func (sfacg *API) GetCatalogue(bookId any) ([]boluobaomodel.VolumeList, error) {
-	var m boluobaomodel.Catalogue
-	err := sfacg.HttpClientGet(fmt.Sprintf("novels/%v/dirs", bookId), map[string]string{"expand": "originNeedFireMoney"}, &m)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
+	data := new(T)
+	if err = res.UnmarshalJson(data); err != nil {
+		return nil, err
 	}
-	if m.Status.HTTPCode != 200 {
-		return nil, fmt.Errorf("get catalogue failed: %v", m.Status.Msg)
-	}
-	return m.Data.VolumeList, nil
 
-}
-
-func (sfacg *API) GetChapterContent(chapterId any) (*boluobaomodel.ContentData, error) {
-	var m boluobaomodel.Content
-	params := map[string]string{"expand": contentInfoExpand, "autoOrder": "false"}
-	err := sfacg.HttpClientGet(fmt.Sprintf("Chaps/%v", chapterId), params, &m)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
+	if response, ok := any(data).(interface {
+		GetCode() int
+		GetTip() string
+		IsSuccess() bool
+	}); ok && !response.IsSuccess() {
+		return nil, fmt.Errorf("error: %s", response.GetTip())
+	} else if !ok {
+		return nil, fmt.Errorf("response does not implement required methods")
 	}
-	if m.Status.HttpCode != 200 {
-		return nil, fmt.Errorf("get chapter content failed: %v", m.Status.Msg)
-	}
-	if m.Data.Expand.Content == "" {
-		return nil, fmt.Errorf("get chapter content failed: no result")
-	}
-	var decodeConfusionContent []rune
-	var defaultConfusionA = []rune(confusion1)
-	for _, c := range m.Data.Expand.Content {
-		lowerC := unicode.ToLower(c)
-		index := -1
-		for i, r := range []rune(confusion2) {
-			if r == lowerC {
-				index = i
-				break
-			}
+	switch v := any(data).(type) {
+	case boluobaomodel.LoginStatus:
+		for _, cookie := range res.Cookies() {
+			v.Cookie += cookie.Name + "=" + cookie.Value + ";"
 		}
-		if index != -1 {
-			if unicode.IsLower(c) {
-				decodeConfusionContent = append(decodeConfusionContent, defaultConfusionA[index])
-			} else {
-				decodeConfusionContent = append(decodeConfusionContent, unicode.ToUpper(defaultConfusionA[index]))
-			}
+		if v.Cookie == "" {
+			return nil, fmt.Errorf("login failed: cookie is empty")
+		}
+	}
+	return data, nil
+}
+
+func (request *Request[T]) handleGetResponse(url string, params map[string]string) (*T, error) {
+	res, err := request.HttpRequest.SetQueryParams(params).Get(url)
+	if err != nil {
+		return nil, err
+	}
+	if res == nil {
+		return nil, fmt.Errorf("response is nil")
+	}
+
+	data := new(T)
+	if err = res.UnmarshalJson(data); err != nil {
+		return nil, err
+	}
+
+	if response, ok := any(data).(interface {
+		GetCode() int
+		GetTip() string
+		IsSuccess() bool
+	}); ok && !response.IsSuccess() {
+		return nil, fmt.Errorf("error: %s", response.GetTip())
+	} else if !ok {
+		return nil, fmt.Errorf("response does not implement required methods")
+	}
+	switch v := any(data).(type) {
+	case boluobaomodel.Content:
+		if v.Data.Expand.Content == "" {
+			return nil, fmt.Errorf("get chapter content failed: no result")
 		} else {
-			decodeConfusionContent = append(decodeConfusionContent, c)
+			v.Data.Expand.Content = decodeContent(v.Data.Expand.Content)
 		}
 	}
-	m.Data.Expand.Content = string(decodeConfusionContent)
-	return &m.Data, nil
+
+	return data, nil
 }
 
-func (sfacg *API) GetNewVipContent(bookId any, chapterId int) (bool, error) {
-	var m boluobaomodel.Status
-	err := sfacg.HttpClientPost(fmt.Sprintf("novels/%v/orderedchaps", bookId), BuyVipContentBody{
+func newRequest[T any](HttpRequest *req.Request) *Request[T] {
+	return &Request[T]{HttpRequest: HttpRequest}
+}
+
+func (sfacg *API) GetBookShelfInfo() (*boluobaomodel.InfoData, error) {
+	return newRequest[boluobaomodel.InfoData](sfacg.HttpRequest).handleGetResponse("user/Pockets", map[string]string{"expand": "novels"})
+}
+
+func (sfacg *API) GetBookInfo(bookId any) (*boluobaomodel.BookInfo, error) {
+	return newRequest[boluobaomodel.BookInfo](sfacg.HttpRequest).handleGetResponse(fmt.Sprintf("novels/%v", bookId), map[string]string{"expand": bookInfoExpand})
+}
+
+func (sfacg *API) GetCatalogue(bookId any) (*boluobaomodel.Catalogue, error) {
+	return newRequest[boluobaomodel.Catalogue](sfacg.HttpRequest).handleGetResponse(fmt.Sprintf("novels/%v/dirs", bookId), map[string]string{"expand": "originNeedFireMoney"})
+
+}
+
+func (sfacg *API) GetChapterContent(chapterId any) (*boluobaomodel.Content, error) {
+	params := map[string]string{"expand": contentInfoExpand, "autoOrder": "false"}
+	return newRequest[boluobaomodel.Content](sfacg.HttpRequest).handleGetResponse(fmt.Sprintf("Chaps/%v", chapterId), params)
+}
+
+func (sfacg *API) GetNewVipContent(bookId any, chapterId int) (*boluobaomodel.Status, error) {
+	body := BuyVipContentBody{
 		OrderType: "readOrder",
 		OrderAll:  false,
 		AutoOrder: true,
 		ChapIds:   []int{chapterId},
-	}, &m)
-	if err != nil {
-		return false, fmt.Errorf("request failed: %v", err)
 	}
-	if m.ErrorCode != 200 {
-		return false, fmt.Errorf("buy vip content failed: %v", m.Msg)
-	}
-	return true, nil
+	return newRequest[boluobaomodel.Status](sfacg.HttpRequest).handlePostResponse(fmt.Sprintf("novels/%v/orderedchaps", bookId), body)
 }
 
-func (sfacg *API) GeContentTsukkomis(row, chapterId, page int) ([]boluobaomodel.TsukkomisData, error) {
-	var m boluobaomodel.Tsukkomis
+func (sfacg *API) GeContentTsukkomis(row, chapterId, page int) (*boluobaomodel.Tsukkomis, error) {
 	params := map[string]string{"expand": "vipLevel,avatar,roleName,widgets,growup", "sort": "data", "page": strconv.Itoa(page), "size": "20", "row": strconv.Itoa(row)}
-	err := sfacg.HttpClientGet(fmt.Sprintf("chaps/0/%v/tsukkomis", chapterId), params, &m)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
-	}
-	if m.Status.HttpCode != 200 {
-		return nil, fmt.Errorf("get chapter tsukkomis failed: %v", m.Status.Msg)
-	}
-	return m.Data, nil
+	return newRequest[boluobaomodel.Tsukkomis](sfacg.HttpRequest).handleGetResponse(fmt.Sprintf("chaps/0/%v/tsukkomis", chapterId), params)
 }
-func (sfacg *API) GetUserInfo() (*boluobaomodel.AccountData, error) {
-	var m boluobaomodel.Account
-	err := sfacg.HttpClientGet("user", map[string]string{"expand": userInfoExpand}, &m)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
-	}
-	if m.Status.HTTPCode != 200 {
-		return nil, fmt.Errorf("get account information failed: %v", m.Status.Msg)
-	}
-	return &m.Data, nil
+func (sfacg *API) GetUserInfo() (*boluobaomodel.Account, error) {
+	return newRequest[boluobaomodel.Account](sfacg.HttpRequest).handleGetResponse("user", map[string]string{"expand": userInfoExpand})
 }
 
-func (sfacg *API) GetUserBuyBooksInfo(page int) ([]boluobaomodel.ConsumeData, error) {
-	var m boluobaomodel.Consume
-	err := sfacg.HttpClientGet("user/consumeitems", map[string]string{"type": "novel", "page": strconv.Itoa(page), "size": "12"}, &m)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
-	}
-	if m.Status.HttpCode != 200 {
-		return nil, fmt.Errorf("get user buyBooks information failed: %v", m.Status.Msg)
-	}
-	return m.Data, nil
+func (sfacg *API) GetUserBuyBooksInfo(page int) (*boluobaomodel.ConsumeData, error) {
+	params := map[string]string{"type": "novel", "page": strconv.Itoa(page), "size": "12"}
+	return newRequest[boluobaomodel.ConsumeData](sfacg.HttpRequest).handleGetResponse("user/consumeitems", params)
 }
-func (sfacg *API) GetUserMoney() (*boluobaomodel.MoneyData, error) {
-	var m boluobaomodel.Money
-	err := sfacg.HttpClientGet("user/money", map[string]string{"expand": userInfoExpand}, &m)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
-	}
-	if m.Status.HttpCode != 200 {
-		return nil, fmt.Errorf("get account information failed: %v", m.Status.Msg)
-	}
-	return &m.Data, nil
+func (sfacg *API) GetUserMoney() (*boluobaomodel.Money, error) {
+	return newRequest[boluobaomodel.Money](sfacg.HttpRequest).handleGetResponse("user/money", map[string]string{"expand": userInfoExpand})
 }
 
-func (sfacg *API) GetCurreyIp() (*boluobaomodel.AccountIpData, error) {
-	var m boluobaomodel.AccountIp
-	err := sfacg.HttpClientGet("position", nil, &m)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
-	}
-	if m.Status.HTTPCode != 200 {
-		return nil, fmt.Errorf("get account ip failed: %v", m.Status.Msg)
-	}
-	return &m.Data, nil
+func (sfacg *API) GetCurreyIp() (*boluobaomodel.AccountIp, error) {
+	return newRequest[boluobaomodel.AccountIp](sfacg.HttpRequest).handleGetResponse("position", nil)
 }
 
-func (sfacg *API) getRankApi(date, rtype, ntype string, page int) ([]boluobaomodel.BookInfoData, error) {
-	var m boluobaomodel.Rank
+func (sfacg *API) getRankApi(date, rtype, ntype string, page int) (*boluobaomodel.Rank, error) {
 	params := map[string]string{"page": strconv.Itoa(page), "size": "50", "rtype": rtype, "ntype": ntype, "expand": bookInfoExpand}
 	if params["rtype"] == "sale" {
 		params["size"] = "40"
 	}
-	err := sfacg.HttpClientGet(fmt.Sprintf("ranks/%s/novels", date), params, &m)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
-	}
-	if m.Status.HttpCode != 200 {
-		return nil, fmt.Errorf("get rank array failed: %v", m.Status.Msg)
-	}
-	if len(m.Data) == 0 {
-		return nil, fmt.Errorf("get rank array failed: no result")
-	}
-	return m.Data, nil
+	return newRequest[boluobaomodel.Rank](sfacg.HttpRequest).handleGetResponse(fmt.Sprintf("ranks/%s/novels", date), params)
 }
 
-func (sfacg *API) GetRankMonthArray(rtype string, page int) ([]boluobaomodel.BookInfoData, error) {
+func (sfacg *API) GetRankMonthArray(rtype string, page int) (*boluobaomodel.Rank, error) {
 	return sfacg.getRankApi("month", rtype, "origin", page)
 }
-func (sfacg *API) GetRankWeekArray(rtype string, page int) ([]boluobaomodel.BookInfoData, error) {
+func (sfacg *API) GetRankWeekArray(rtype string, page int) (*boluobaomodel.Rank, error) {
 	return sfacg.getRankApi("week", rtype, "origin", page)
 }
-func (sfacg *API) GetRankAllArray(rtype string, page int) ([]boluobaomodel.BookInfoData, error) {
+func (sfacg *API) GetRankAllArray(rtype string, page int) (*boluobaomodel.Rank, error) {
 	return sfacg.getRankApi("all", rtype, "origin", page)
 }
 
-func (sfacg *API) GetOtherUserInfo(accountId string) (*boluobaomodel.AccountData, error) {
-	var m boluobaomodel.Users
-	err := sfacg.HttpClientGet("users/"+accountId, nil, &m)
-	if err != nil {
-		log.Println("get user information failed:", err)
-		return nil, fmt.Errorf("request failed: %v", err)
-	}
-	if m.Status.HTTPCode != 200 {
-		return nil, fmt.Errorf("get user information failed: %v", m.Status.Msg)
-	}
-	return &m.Data, nil
+func (sfacg *API) GetOtherUserInfo(accountId string) (*boluobaomodel.Users, error) {
+	return newRequest[boluobaomodel.Users](sfacg.HttpRequest).handleGetResponse("users/"+accountId, nil)
 }
 
-func (sfacg *API) GetUserWorks(accountId string) ([]boluobaomodel.BookInfoData, error) {
-	var m boluobaomodel.AuthorInfo
-	err := sfacg.HttpClientGet("users/"+accountId+"/novels", map[string]string{"expand": "typeName,sysTags,isbranch"}, &m)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
-	}
-	if m.Status.HTTPCode != 200 {
-		return nil, fmt.Errorf("get user works failed: %v", m.Status.Msg)
-	}
-	if len(m.Data) == 0 {
-		return nil, fmt.Errorf("get user works failed: no result")
-	}
-	return m.Data, nil
+func (sfacg *API) GetUserWorks(accountId string) (*boluobaomodel.AuthorInfo, error) {
+	params := map[string]string{"expand": "typeName,sysTags,isbranch"}
+	return newRequest[boluobaomodel.AuthorInfo](sfacg.HttpRequest).handleGetResponse("users/"+accountId+"/novels", params)
 }
 
-func (sfacg *API) Login(username string, password string) (string, error) {
-	response, err := sfacg.HttpRequest.SetBody(LoginBody{Username: username, Password: password}).
-		Post("sessions")
-
-	if err != nil {
-		return "", fmt.Errorf("request failed: %v", err)
-	}
-	if response.GetStatusCode() != 200 {
-		return "", fmt.Errorf("login failed: %v", response.String())
-	}
-	var loginCookie string
-	for _, cookie := range response.Cookies() {
-		loginCookie += cookie.Name + "=" + cookie.Value + ";"
-	}
-	if loginCookie == "" {
-		return "", fmt.Errorf("login failed: cookie is empty")
-	}
-	return loginCookie, nil
+func (sfacg *API) Login(username string, password string) (*boluobaomodel.LoginStatus, error) {
+	body := LoginBody{Username: username, Password: password}
+	return newRequest[boluobaomodel.LoginStatus](sfacg.HttpRequest).handlePostResponse("sessions", body)
 }
 
 func (sfacg *API) GetSearch(keyword string, page int) (*boluobaomodel.Search, error) {
-	var m boluobaomodel.Search
 	params := map[string]string{"q": keyword, "page": strconv.Itoa(page), "size": "15", "expand": bookInfoExpand}
-	err := sfacg.HttpClientGet("/search/novels/result", params, &m)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
-	}
-	if m.Status.HttpCode != 200 {
-		return nil, fmt.Errorf("get search failed: %v", m.Status.Msg)
-	}
-	if len(m.Data.Novels) == 0 {
-		return nil, fmt.Errorf("get search failed: no result")
-	}
-	return &m, nil
+	return newRequest[boluobaomodel.Search](sfacg.HttpRequest).handleGetResponse("search/novels/result", params)
 }

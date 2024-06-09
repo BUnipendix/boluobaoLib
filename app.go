@@ -26,7 +26,7 @@ func (app *APP) EachChapter(bookId string, f func(boluobaomodel.ChapterList)) {
 		fmt.Println("get division list error:", err)
 		return
 	}
-	for _, division := range divisionList {
+	for _, division := range divisionList.Data.VolumeList {
 		for _, chapter := range division.ChapterList {
 			f(chapter)
 		}
@@ -50,7 +50,7 @@ func (app *APP) Download(bookId string, f1 continueFunction, f2 contentFunction)
 					fmt.Println("get chapter content error:", err)
 					return
 				}
-				f2(content)
+				f2(&content.Data)
 			}
 		}(chapter)
 	})
