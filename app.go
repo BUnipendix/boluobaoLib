@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/AlexiaVeronica/boluobaoLib/boluobaomodel"
 	"github.com/AlexiaVeronica/input"
-	"strconv"
 	"sync"
 )
 
@@ -20,8 +19,8 @@ func (app *APP) SetThreadNum(threadNum int) *APP {
 	app.threadNum = threadNum
 	return app
 }
-func (app *APP) EachChapter(bookId string, f func(boluobaomodel.ChapterList)) {
-	divisionList, err := app.client.API().GetCatalogue(bookId)
+func (app *APP) EachChapter(bookInfo *boluobaomodel.BookInfoData, f func(boluobaomodel.ChapterList)) {
+	divisionList, err := app.client.API().GetCatalogue(bookInfo.NovelId)
 	if err != nil {
 		fmt.Println("get division list error:", err)
 		return
@@ -33,10 +32,10 @@ func (app *APP) EachChapter(bookId string, f func(boluobaomodel.ChapterList)) {
 	}
 }
 
-func (app *APP) Download(bookId string, f1 continueFunction, f2 contentFunction) {
+func (app *APP) Download(bookInfo *boluobaomodel.BookInfoData, f1 continueFunction, f2 contentFunction) {
 	var wg sync.WaitGroup
 	ch := make(chan struct{}, app.threadNum)
-	app.EachChapter(bookId, func(chapter boluobaomodel.ChapterList) {
+	app.EachChapter(bookInfo, func(chapter boluobaomodel.ChapterList) {
 		wg.Add(1)
 		ch <- struct{}{}
 		go func(chapter boluobaomodel.ChapterList) {
@@ -44,13 +43,13 @@ func (app *APP) Download(bookId string, f1 continueFunction, f2 contentFunction)
 				wg.Done()
 				<-ch
 			}()
-			if f1(chapter) {
+			if f1(bookInfo, chapter) {
 				content, err := app.client.API().GetChapterContent(chapter.ChapID)
 				if err != nil {
 					fmt.Println("get chapter content error:", err)
 					return
 				}
-				f2(&content.Data)
+				f2(bookInfo, &content.Data)
 			}
 		}(chapter)
 	})
@@ -67,7 +66,7 @@ func (app *APP) Search(keyword string, f1 continueFunction, f2 contentFunction) 
 		fmt.Println("Index:", index, "\t\t\tBookName:", book.NovelName)
 	})
 	bookInfo := searchInfo.GetBook(input.IntInput("Please input the index of the book you want to download"))
-	app.Download(strconv.Itoa(bookInfo.NovelId), f1, f2)
+	app.Download(bookInfo, f1, f2)
 }
 
 func (app *APP) Bookshelf(f1 continueFunction, f2 contentFunction) {
@@ -84,6 +83,6 @@ func (app *APP) Bookshelf(f1 continueFunction, f2 contentFunction) {
 		fmt.Println("Index:", index, "\t\t\tBookName:", book.NovelName)
 	})
 	bookInfo := bookshelf.GetBookshelf(input.IntInput("Please input the index of the book you want to download"))
-	app.Download(strconv.Itoa(bookInfo.NovelId), f1, f2)
+	app.Download(bookInfo, f1, f2)
 
 }

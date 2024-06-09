@@ -67,13 +67,14 @@ func (request *Request[T]) handlePostResponse(url string, body any) (*T, error) 
 		return nil, fmt.Errorf("response does not implement required methods")
 	}
 	switch v := any(data).(type) {
-	case boluobaomodel.LoginStatus:
+	case *boluobaomodel.LoginStatus:
 		for _, cookie := range res.Cookies() {
 			v.Cookie += cookie.Name + "=" + cookie.Value + ";"
 		}
 		if v.Cookie == "" {
 			return nil, fmt.Errorf("login failed: cookie is empty")
 		}
+		data = any(v).(*T)
 	}
 	return data, nil
 }
