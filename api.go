@@ -46,10 +46,6 @@ func (sfacg *API) GetUserInfo() (*boluobaomodel.Account, error) {
 	return newRequest[boluobaomodel.Account](sfacg.HttpRequest).handleGetResponse("user", map[string]string{"expand": userInfoExpand})
 }
 
-func (sfacg *API) GetUserBuyBooksInfo(page int) (*boluobaomodel.ConsumeData, error) {
-	params := map[string]string{"type": "novel", "page": strconv.Itoa(page), "size": "12"}
-	return newRequest[boluobaomodel.ConsumeData](sfacg.HttpRequest).handleGetResponse("user/consumeitems", params)
-}
 func (sfacg *API) GetUserMoney() (*boluobaomodel.Money, error) {
 	return newRequest[boluobaomodel.Money](sfacg.HttpRequest).handleGetResponse("user/money", map[string]string{"expand": userInfoExpand})
 }
@@ -78,11 +74,6 @@ func (sfacg *API) GetRankAllArray(rtype string, page int) (*boluobaomodel.Rank, 
 
 func (sfacg *API) GetOtherUserInfo(accountId string) (*boluobaomodel.Users, error) {
 	return newRequest[boluobaomodel.Users](sfacg.HttpRequest).handleGetResponse(fmt.Sprintf("users/%v", accountId), nil)
-}
-
-func (sfacg *API) GetUserWorks(accountId string) (*boluobaomodel.AuthorInfo, error) {
-	params := map[string]string{"expand": "typeName,sysTags,isbranch"}
-	return newRequest[boluobaomodel.AuthorInfo](sfacg.HttpRequest).handleGetResponse(fmt.Sprintf("users/%v/novels", accountId), params)
 }
 
 func (sfacg *API) Login(username string, password string) (*boluobaomodel.LoginStatus, error) {
