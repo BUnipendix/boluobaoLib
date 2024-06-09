@@ -3,7 +3,7 @@ package boluobaoapi
 import (
 	"fmt"
 	"github.com/AlexiaVeronica/boluobaoLib/boluobaomodel"
-	"github.com/imroc/req/v3"
+	"github.com/AlexiaVeronica/req/v3"
 	"log"
 	"strconv"
 	"unicode"

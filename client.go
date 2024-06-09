@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/AlexiaVeronica/boluobaoLib/boluobaoapi"
-	"github.com/imroc/req/v3"
+	"github.com/AlexiaVeronica/req/v3"
 	"net/url"
 	"strconv"
 	"strings"
