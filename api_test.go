@@ -3,7 +3,7 @@ package boluobaoLib
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/AlexiaVeronica/boluobaoLib/boluobaomodel"
+	"github.com/BUnipendix/boluobaoLib/boluobaomodel"
 	"io"
 	"net/http"
 	"os"

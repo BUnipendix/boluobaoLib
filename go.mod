@@ -1,4 +1,4 @@
-module github.com/AlexiaVeronica/boluobaoLib
+module github.com/BUnipendix/boluobaoLib
 
 go 1.22.0
 

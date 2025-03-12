@@ -2,7 +2,7 @@ package boluobaoLib
 
 import (
 	"fmt"
-	"github.com/AlexiaVeronica/boluobaoLib/boluobaomodel"
+	"github.com/BUnipendix/boluobaoLib/boluobaomodel"
 	"github.com/AlexiaVeronica/input"
 	"sync"
 )

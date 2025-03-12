@@ -7,7 +7,7 @@ BoluobaoLib is a Go library for interacting with the Boluobao API. It provides a
 To use BoluobaoLib in your Go project, you can install it using the following command:
 
 ```
-go get github.com/AlexiaVeronica/boluobaoLib
+go get github.com/BUnipendix/boluobaoLib
 ```
 
 ## Usage

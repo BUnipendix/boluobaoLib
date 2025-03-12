@@ -1,7 +1,7 @@
 package boluobaoLib
 
 import (
-	"github.com/AlexiaVeronica/boluobaoLib/boluobaomodel"
+	"github.com/BUnipendix/boluobaoLib/boluobaomodel"
 )
 
 const (
